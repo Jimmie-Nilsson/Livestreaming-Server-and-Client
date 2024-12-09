@@ -33,7 +33,7 @@ public class StreamingServer {
             }
         }
         private void handleStreamer (Socket streamerSocket, DatagramSocket udpSocket){
-            byte[] buffer = new byte[4096]; // Buffer size for UDP packets
+            byte[] buffer = new byte[8192]; // Buffer size for UDP packets
             try (InputStream inputStream = streamerSocket.getInputStream()) {
                 int bytesRead;
 
@@ -41,6 +41,7 @@ public class StreamingServer {
                     // Send received data to all connected receiver clients
                     for (InetSocketAddress clientAddress : receiverClients) {
                         DatagramPacket packet = new DatagramPacket(buffer, bytesRead, clientAddress.getAddress(), clientAddress.getPort());
+                        System.out.println("Sending " + bytesRead + " bytes to " + clientAddress + "to port:  " + clientAddress.getPort());
                         udpSocket.send(packet);
                     }
                 }

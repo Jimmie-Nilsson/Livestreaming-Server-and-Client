@@ -34,6 +34,15 @@ public class StreamingClient {
             recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
             recorder.setFrameRate(30);
             recorder.setVideoBitrate(2000000);
+
+            recorder.setOption("movflags", "faststart");
+            recorder.setVideoOption("preset", "ultrafast");
+            recorder.setOption("mpegts_flags", "resend_headers");
+
+            recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
+            recorder.setAudioChannels(2); // Stereo
+            recorder.setAudioBitrate(128000);
+
             recorder.start();
 
 
