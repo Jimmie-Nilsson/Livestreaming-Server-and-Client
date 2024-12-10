@@ -15,40 +15,64 @@ public class StreamingServer {
         }
     }
 
-        public void startServer () throws IOException {
-            ServerSocket serverSocket = new ServerSocket(TCP_PORT);
-            DatagramSocket udpSocket = new DatagramSocket();
+    public void startServer() throws IOException {
+        ServerSocket serverSocket = new ServerSocket(TCP_PORT);
+        DatagramSocket udpSocket = new DatagramSocket();
 
-            // Thread to handle receiver registration
-            new Thread(this::listenForReceivers).start();
+        // Thread to handle receiver registration
+        new Thread(this::listenForReceivers).start();
 
-            System.out.println("Server started. Waiting for connections...");
-            while (true) {
-                Socket streamerSocket = serverSocket.accept();
-                System.out.println("Streamer connected: " + streamerSocket.getInetAddress());
+        System.out.println("Server started. Waiting for connections...");
+        while (true) {
+            Socket streamerSocket = serverSocket.accept();
+            System.out.println("Streamer connected: " + streamerSocket.getInetAddress());
 
-                // Handle the streamer in a new thread
-                new Thread(() -> handleStreamer(streamerSocket, udpSocket)).start();
-
-            }
+            // Handle the streamer in a new thread
+            new Thread(() -> handleStreamer(streamerSocket, udpSocket)).start();
         }
-        private void handleStreamer (Socket streamerSocket, DatagramSocket udpSocket){
-            byte[] buffer = new byte[8192]; // Buffer size for UDP packets
-            try (InputStream inputStream = streamerSocket.getInputStream()) {
-                int bytesRead;
+    }
 
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    // Send received data to all connected receiver clients
-                    for (InetSocketAddress clientAddress : receiverClients) {
-                        DatagramPacket packet = new DatagramPacket(buffer, bytesRead, clientAddress.getAddress(), clientAddress.getPort());
-                        System.out.println("Sending " + bytesRead + " bytes to " + clientAddress + "to port:  " + clientAddress.getPort());
-                        udpSocket.send(packet);
+    private void handleStreamer(Socket streamerSocket, DatagramSocket udpSocket) {
+        byte[] buffer = new byte[8192]; // Larger buffer to read data
+        byte[] packetBuffer = new byte[1316]; // Fixed-size buffer for packets
+
+        try (InputStream inputStream = streamerSocket.getInputStream()) {
+            int bytesRead, offset = 0;
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                for (int i = 0; i < bytesRead; i++) {
+                    packetBuffer[offset++] = buffer[i];
+
+                    // Send packet when the buffer is full
+                    if (offset == packetBuffer.length) {
+                        sendPacket(packetBuffer, udpSocket);
+                        offset = 0; // Reset offset for the next packet
                     }
                 }
+            }
+
+            // Handle remaining bytes if any
+            if (offset > 0) {
+                byte[] lastPacket = new byte[offset];
+                System.arraycopy(packetBuffer, 0, lastPacket, 0, offset);
+                sendPacket(lastPacket, udpSocket);
+            }
+        } catch (IOException e) {
+            System.err.println("Streamer disconnected: " + e.getMessage());
+        }
+    }
+
+    private void sendPacket(byte[] packet, DatagramSocket udpSocket) {
+        for (InetSocketAddress clientAddress : receiverClients) {
+            try {
+                DatagramPacket datagramPacket = new DatagramPacket(packet, packet.length, clientAddress.getAddress(), clientAddress.getPort());
+                udpSocket.send(datagramPacket);
+                System.out.println("Sending packet to " + clientAddress);
             } catch (IOException e) {
-                System.err.println("Streamer disconnected: " + e.getMessage());
+                System.err.println("Error sending packet: " + e.getMessage());
             }
         }
+    }
 
     private void listenForReceivers() {
         try (DatagramSocket registrationSocket = new DatagramSocket(RECEIVER_REGISTRATION_PORT)) {

@@ -38,6 +38,7 @@ public class StreamingClient {
             recorder.setOption("movflags", "faststart");
             recorder.setVideoOption("preset", "ultrafast");
             recorder.setOption("mpegts_flags", "resend_headers");
+            recorder.setOption("pkt_size", "1316"); // Set packet size
 
             recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
             recorder.setAudioChannels(2); // Stereo
