@@ -106,6 +106,7 @@ public class StreamingServer {
             String[] parts = message.split(":");
             String displayName = parts[0];
             int streamPort = Integer.parseInt(parts[1]);
+            ClientHandler client = new ClientHandler(this, clientSocket, displayName, streamPort);
             InetSocketAddress clientAddress = new InetSocketAddress(clientSocket.getInetAddress(), streamPort);
             addReceiverClient(clientAddress);
             writer.println("Registration successful");
