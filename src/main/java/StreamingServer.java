@@ -3,38 +3,49 @@ import java.net.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class StreamingServer {
-    private static final int TCP_PORT = 8080; // Port for streamer connections
-    private static final int RECEIVER_REGISTRATION_PORT = 8082; // Port for receiver registration
+    private int streamerPort;
+    private int chatPort;
     private static final CopyOnWriteArrayList<InetSocketAddress> receiverClients = new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<PrintWriter> chatClients = new CopyOnWriteArrayList<>();
 
     public static void main(String[] args) {
-        try {
-            new StreamingServer().startServer();
+        new StreamingServer().startServer();
+    }
+
+    public StreamingServer(int streamerPort, int chatPort) {
+        this.streamerPort = streamerPort;
+        this.chatPort = chatPort;
+    }
+
+    public StreamingServer() {
+        streamerPort = 8080;
+        chatPort = 8082;
+    }
+
+    public void startServer() {
+        try (ServerSocket serverSocket = new ServerSocket(streamerPort);
+             DatagramSocket udpSocket = new DatagramSocket()) {
+
+
+            // each registration is put in a new thread.
+            new Thread(this::listenForReceiversTCP).start();
+
+            System.out.println("Server started. Waiting for connections...");
+            while (true) {
+                Socket streamerSocket = serverSocket.accept();
+                System.out.println("Streamer connected: " + streamerSocket.getInetAddress());
+
+                // Handle the streamer in a new thread
+                new Thread(() -> handleStreamer(streamerSocket, udpSocket)).start();
+            }
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
     }
 
-    public void startServer() throws IOException {
-        ServerSocket serverSocket = new ServerSocket(TCP_PORT);
-        DatagramSocket udpSocket = new DatagramSocket();
-
-        // Thread to handle receiver registration
-        new Thread(this::listenForReceivers).start();
-
-        System.out.println("Server started. Waiting for connections...");
-        while (true) {
-            Socket streamerSocket = serverSocket.accept();
-            System.out.println("Streamer connected: " + streamerSocket.getInetAddress());
-
-            // Handle the streamer in a new thread
-            new Thread(() -> handleStreamer(streamerSocket, udpSocket)).start();
-        }
-    }
-
     private void handleStreamer(Socket streamerSocket, DatagramSocket udpSocket) {
-        byte[] buffer = new byte[8192]; // Larger buffer to read data
-        byte[] packetBuffer = new byte[1316]; // Fixed-size buffer for packets
+        byte[] buffer = new byte[8192]; // larger buffer to read data
+        byte[] packetBuffer = new byte[1316]; // fixed size buffer for packets
 
         try (InputStream inputStream = streamerSocket.getInputStream()) {
             int bytesRead, offset = 0;
@@ -43,15 +54,15 @@ public class StreamingServer {
                 for (int i = 0; i < bytesRead; i++) {
                     packetBuffer[offset++] = buffer[i];
 
-                    // Send packet when the buffer is full
+                    // send packet when the buffer is full
                     if (offset == packetBuffer.length) {
                         sendPacket(packetBuffer, udpSocket);
-                        offset = 0; // Reset offset for the next packet
+                        offset = 0; // reset offset for the next packet
                     }
                 }
             }
 
-            // Handle remaining bytes if any
+            // remaining bytes if any
             if (offset > 0) {
                 byte[] lastPacket = new byte[offset];
                 System.arraycopy(packetBuffer, 0, lastPacket, 0, offset);
@@ -67,27 +78,40 @@ public class StreamingServer {
             try {
                 DatagramPacket datagramPacket = new DatagramPacket(packet, packet.length, clientAddress.getAddress(), clientAddress.getPort());
                 udpSocket.send(datagramPacket);
-                System.out.println("Sending packet to " + clientAddress);
+                System.out.println("Sending packet to " + clientAddress); // debug message
             } catch (IOException e) {
-                System.err.println("Error sending packet: " + e.getMessage());
+                System.err.println("Error sending packet: " + e.getMessage()); // debug message
             }
         }
     }
 
-    private void listenForReceivers() {
-        try (DatagramSocket registrationSocket = new DatagramSocket(RECEIVER_REGISTRATION_PORT)) {
-            System.out.println("Listening for receiver registrations on port " + RECEIVER_REGISTRATION_PORT);
+    private void listenForReceiversTCP() {
+        try (ServerSocket registrationSocket = new ServerSocket(chatPort)) {
+            System.out.println("Listening for receiver registrations on port " + chatPort);
 
-            byte[] buffer = new byte[256]; // Small buffer for registration messages
             while (true) {
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                registrationSocket.receive(packet);
-
-                InetSocketAddress clientAddress = new InetSocketAddress(packet.getAddress(), packet.getPort());
-                addReceiverClient(clientAddress);
+                Socket clientSocket = registrationSocket.accept();
+                new Thread(() -> handleReceiverRegistration(clientSocket)).start();
             }
         } catch (IOException e) {
             System.err.println("Error in receiver registration listener: " + e.getMessage());
+        }
+    }
+
+    private void handleReceiverRegistration(Socket clientSocket) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+             PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)) {
+
+            String message = reader.readLine();
+            String[] parts = message.split(":");
+            String displayName = parts[0];
+            int streamPort = Integer.parseInt(parts[1]);
+            InetSocketAddress clientAddress = new InetSocketAddress(clientSocket.getInetAddress(), streamPort);
+            addReceiverClient(clientAddress);
+            writer.println("Registration successful");
+            System.out.println("Receiver registered: " + clientAddress);
+        } catch (IOException e) {
+            System.err.println("Error handling receiver registration: " + e.getMessage());
         }
     }
 

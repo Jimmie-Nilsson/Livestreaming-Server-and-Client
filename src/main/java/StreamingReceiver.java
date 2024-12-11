@@ -2,58 +2,107 @@ import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent;
 
 import javax.swing.*;
 import java.awt.*;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 public class StreamingReceiver {
+    private int streamPort;
+    private final int chatPort;
+    private final String displayName;
+    private String serverAddress;
+    private String udpStreamUrl;
+    private ChatClient chatClient;
+
+    public StreamingReceiver(String serverAddress, int streamPort, int chatPort, String displayName) {
+        this.serverAddress = serverAddress;
+        this.streamPort = streamPort;
+        this.chatPort = chatPort;
+        this.displayName = displayName;
+        udpStreamUrl = "udp://@:" + this.streamPort + "?pkt_size=1316";
+        initializeChatClient();
+        connectToServer(serverAddress, streamPort, chatPort, displayName);
+    }
+    public StreamingReceiver() {
+        this.serverAddress = "127.0.0.1";
+        this.streamPort = 8081;
+        this.chatPort = 8082;
+        this.displayName = "Test";
+        udpStreamUrl = "udp://@:" + streamPort + "?pkt_size=1316";
+        initializeChatClient();
+        connectToServer(serverAddress, streamPort, chatPort, displayName);
+    }
+
+
     public static void main(String[] args) {
-        int udpPort = 8081; // Port to listen for the stream
-        //String udpStreamUrl = "udp://@:" + udpPort; // VLC-style UDP stream URL
-        String udpStreamUrl = "udp://@:" + udpPort + "?pkt_size=1316";// Listening on the local machine's UDP port
+        if (args.length != 4) {
+            //System.err.println("Error usage: java StreamingReceiver <serverAddress> <streamPort> <chatPort> <displayName>");
+            //System.exit(1);
+        }
+        new StreamingReceiver();
 
-        // Register with the server
-        String serverAddress = "localhost"; // Replace with actual server address if remote
-        int registrationPort = 8082;
+    }
 
-        try (DatagramSocket socket = new DatagramSocket(udpPort)) {
-            InetAddress serverInetAddress = InetAddress.getByName(serverAddress);
-            byte[] message = "REGISTER".getBytes();
+    private void initializeChatClient() {
+        chatClient = new ChatClient(serverAddress, chatPort);
+        chatClient.setMessageListener(message -> SwingUtilities.invokeLater(() -> appendChatMessage(message)));
+        try {
+            chatClient.connect();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Failed to connect to chat server: " + e.getMessage());
+        }
+    }
 
-            DatagramPacket packet = new DatagramPacket(message, message.length, serverInetAddress, registrationPort);
-            socket.send(packet);
-            System.out.println("Registered with the server on port " + registrationPort);
-        } catch (Exception e) {
-            e.printStackTrace();
+    private void connectToServer(String serverAddress, int streamPort, int chatPort, String displayName) {
+        try (Socket socket = new Socket(serverAddress, chatPort);
+             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+            writer.println(displayName + ":" + streamPort);
+            String response = reader.readLine();
+            if (response.equalsIgnoreCase("Registration successful")){
+                System.out.println("Successfully registered with the server on: " + serverAddress + " on port: " + chatPort);
+            } else {
+                System.err.println("Registration failed: " + response);
+                return;
+            }
+        } catch (IOException e) {
+            System.err.println("Error connecting to server: " + e.getMessage());
             return;
         }
-
-        // Initialize Swing and VLCJ components
         SwingUtilities.invokeLater(() -> createAndShowGUI(udpStreamUrl));
     }
 
     private static void createAndShowGUI(String udpStreamUrl) {
-        // Create the JFrame
+
         JFrame frame = new JFrame("Streaming Receiver");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
         frame.setLayout(new BorderLayout());
 
-        // Add VLCJ EmbeddedMediaPlayerComponent
+
         EmbeddedMediaPlayerComponent mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
         frame.add(mediaPlayerComponent, BorderLayout.CENTER);
 
-        // Show the frame
+
         frame.setVisible(true);
 
-        // Start playing the UDP stream
+
         mediaPlayerComponent.mediaPlayer().media().play(udpStreamUrl);
         System.out.println("Streaming playback started on " + udpStreamUrl);
 
-        // Add shutdown hook to release VLCJ resources on exit
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             mediaPlayerComponent.release();
             System.out.println("MediaPlayer resources released.");
         }));
+    }
+    private void appendChatMessage(String message) {
+        // Append incoming message to the chat area
+        // This can be optimized if `chatArea` is made a field
+        JTextArea chatArea = ((JTextArea) ((JScrollPane) ((JPanel) ((JFrame) SwingUtilities.getWindowAncestor(null))
+                .getContentPane().getComponent(1)).getComponent(0)).getViewport().getView());
+        chatArea.append(message + "\n");
     }
 }
