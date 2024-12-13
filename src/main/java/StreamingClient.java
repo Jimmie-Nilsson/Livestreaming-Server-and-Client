@@ -40,6 +40,7 @@ public class StreamingClient {
             recorder.setOption("mpegts_flags", "resend_headers");
             recorder.setOption("pkt_size", "1316"); // Set packet size
 
+            // I did not get audio to work sadly but i left some code here.
             recorder.setAudioCodec(avcodec.AV_CODEC_ID_AAC);
             recorder.setAudioChannels(2); // Stereo
             recorder.setAudioBitrate(128000);

@@ -1,12 +1,12 @@
 import java.io.*;
 import java.net.*;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 public class StreamingServer {
-    private int streamerPort;
-    private int chatPort;
-    private static final CopyOnWriteArrayList<InetSocketAddress> receiverClients = new CopyOnWriteArrayList<>();
-    private static final CopyOnWriteArrayList<PrintWriter> chatClients = new CopyOnWriteArrayList<>();
+    private final int streamerPort;
+    private final int chatPort;
+    private static final ConcurrentHashMap<InetSocketAddress, PrintWriter> clients = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
         new StreamingServer().startServer();
@@ -24,11 +24,10 @@ public class StreamingServer {
 
     public void startServer() {
         try (ServerSocket serverSocket = new ServerSocket(streamerPort);
+             ServerSocket chatSocket = new ServerSocket(chatPort);
              DatagramSocket udpSocket = new DatagramSocket()) {
 
-
-            // each registration is put in a new thread.
-            new Thread(this::listenForReceiversTCP).start();
+            new Thread(() -> listenForChatConnections(chatSocket)).start();
 
             System.out.println("Server started. Waiting for connections...");
             while (true) {
@@ -74,7 +73,7 @@ public class StreamingServer {
     }
 
     private void sendPacket(byte[] packet, DatagramSocket udpSocket) {
-        for (InetSocketAddress clientAddress : receiverClients) {
+        for (InetSocketAddress clientAddress : clients.keySet()) {
             try {
                 DatagramPacket datagramPacket = new DatagramPacket(packet, packet.length, clientAddress.getAddress(), clientAddress.getPort());
                 udpSocket.send(datagramPacket);
@@ -85,41 +84,68 @@ public class StreamingServer {
         }
     }
 
-    private void listenForReceiversTCP() {
-        try (ServerSocket registrationSocket = new ServerSocket(chatPort)) {
-            System.out.println("Listening for receiver registrations on port " + chatPort);
-
+    private void listenForChatConnections(ServerSocket chatSocket) {
+        try {
+            System.out.println("Listening for chat clients on port " + chatPort + "...");
             while (true) {
-                Socket clientSocket = registrationSocket.accept();
-                new Thread(() -> handleReceiverRegistration(clientSocket)).start();
+                Socket chatClientSocket = chatSocket.accept();
+                new Thread(() -> handleChatClient(chatClientSocket)).start();
             }
         } catch (IOException e) {
-            System.err.println("Error in receiver registration listener: " + e.getMessage());
+            System.err.println("Error in chat listener: " + e.getMessage());
         }
     }
 
-    private void handleReceiverRegistration(Socket clientSocket) {
+    private void handleChatClient(Socket clientSocket) {
+        InetSocketAddress clientAddress = null;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)) {
+            System.out.println("Client connected: " + clientSocket.getInetAddress());
 
-            String message = reader.readLine();
-            String[] parts = message.split(":");
-            String displayName = parts[0];
-            int streamPort = Integer.parseInt(parts[1]);
-            ClientHandler client = new ClientHandler(this, clientSocket, displayName, streamPort);
-            InetSocketAddress clientAddress = new InetSocketAddress(clientSocket.getInetAddress(), streamPort);
-            addReceiverClient(clientAddress);
-            writer.println("Registration successful");
-            System.out.println("Receiver registered: " + clientAddress);
+            // First message is for registration
+            String registrationMessage = reader.readLine();
+            if (registrationMessage != null && registrationMessage.startsWith("REGISTER")) {
+
+                // Add to chat clients list
+                String[] parts = registrationMessage.split(":");
+                String displayName = parts[1];
+                int streamPort = Integer.parseInt(parts[2]);
+                System.out.println("Registered client: " + displayName);
+                clientAddress = new InetSocketAddress(clientSocket.getInetAddress(), streamPort);
+                clients.put(clientAddress, writer);
+
+                // Acknowledge registration
+                writer.println("Registration successful");
+
+                // Transition to chat mode
+                handleChatMessages(reader, displayName);
+            }
         } catch (IOException e) {
-            System.err.println("Error handling receiver registration: " + e.getMessage());
+            System.err.println("Error handling chat client: " + e.getMessage());
+        } finally {
+            if (clientAddress != null) {
+                clients.remove(clientAddress);
+                System.out.println("Client removed: " + clientAddress);
+            }
         }
     }
 
-    private synchronized void addReceiverClient(InetSocketAddress clientAddress) {
-        if (!receiverClients.contains(clientAddress)) {
-            receiverClients.add(clientAddress);
-            System.out.println("Receiver added: " + clientAddress);
+    private void handleChatMessages(BufferedReader reader, String displayName) {
+        try {
+            String message;
+            while ((message = reader.readLine()) != null) {
+                String formattedMessage = displayName + ": " + message;
+                System.out.println("Broadcasting chat message: " + formattedMessage);
+                broadcastChatMessage(formattedMessage);
+            }
+        } catch (IOException e) {
+            System.err.println("Chat client disconnected: " + e.getMessage());
+        }
+    }
+
+    private void broadcastChatMessage(String message) {
+        for (PrintWriter client : clients.values()) {
+            client.println(message);
         }
     }
 }
