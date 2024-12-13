@@ -52,7 +52,6 @@ public class StreamingReceiver {
 
         // Media Player
         EmbeddedMediaPlayerComponent mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
-        frame.add(mediaPlayerComponent, BorderLayout.CENTER);
 
         // Chat Panel
         JPanel chatPanel = new JPanel(new BorderLayout());
@@ -69,10 +68,21 @@ public class StreamingReceiver {
                 chatInput.setText("");
             }
         });
+
         chatPanel.add(chatInput, BorderLayout.SOUTH);
 
-        frame.add(chatPanel, BorderLayout.EAST);
+
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane.setResizeWeight(0.7); //  70% of the space to the VLC media player
+        splitPane.setDividerLocation(850);
+
+
+        splitPane.setLeftComponent(mediaPlayerComponent); // Left side: Media Player
+        splitPane.setRightComponent(chatPanel); // Right side: Chat Panel
+
+        frame.add(splitPane, BorderLayout.CENTER);
         frame.setVisible(true);
+
         initializeChatClient();
         mediaPlayerComponent.mediaPlayer().media().play(udpStreamUrl);
     }
