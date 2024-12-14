@@ -7,6 +7,8 @@ import java.net.Socket;
  * A client class for handling chat communication with a server.
  * It supports connecting to a server, sending messages, receiving messages,
  * and managing the connection lifecycle.
+ *
+ * @author Jimmie Nilsson jini6619
  */
 public class ChatClient {
     private final String serverAddress;

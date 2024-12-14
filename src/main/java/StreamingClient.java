@@ -14,6 +14,8 @@ import java.net.Socket;
 
 /**
  * A client application for streaming video to a server using FFmpeg and displaying it locally.
+ *
+ * @author Jimmie Nilsson jini6619
  */
 public class StreamingClient {
 

@@ -12,6 +12,8 @@ import java.io.IOException;
 
 /**
  * A client application to receive a video stream over UDP and manage chat functionality.
+ *
+ * @author Jimmie Nilsson jini6619
  */
 public class StreamingReceiver {
     private final int streamPort;
