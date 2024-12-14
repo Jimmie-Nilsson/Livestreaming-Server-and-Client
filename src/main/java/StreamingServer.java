@@ -2,26 +2,58 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-
+/**
+ * StreamingServer handles the streaming of video data from a streamer to multiple receivers
+ * using a combination of TCP and UDP protocols. It also manages chat connections and broadcasts
+ * chat messages to connected clients.
+ *
+ * @author Jimmie Nilsson jini6619
+ */
 public class StreamingServer {
     private final int streamerPort;
     private final int chatPort;
     private static final ConcurrentHashMap<InetSocketAddress, PrintWriter> clients = new ConcurrentHashMap<>();
 
+    /**
+     * Main entry point for the StreamingServer application.
+     *
+     * Initializes the server with the provided streamer and chat ports or uses default ports
+     * if no arguments are provided.
+     *
+     * @param args Command-line arguments:
+     *             args[0] - Streamer port (optional).
+     *             args[1] - Chat port (optional).
+     */
     public static void main(String[] args) {
-        new StreamingServer().startServer();
+        if (args.length == 2) {
+            new StreamingServer(Integer.parseInt(args[0]), Integer.parseInt(args[1])).startServer();
+        }else if (args.length == 0){
+            new StreamingServer().startServer();
+        }else {
+            System.out.println("Usage: java StreamingServer <streamer port> <chat port>");
+        }
     }
-
+    /**
+     * Constructs a StreamingServer with specified ports for streaming and chat connections.
+     *
+     * @param streamerPort Port for the video streamer to connect.
+     * @param chatPort     Port for chat clients to connect.
+     */
     public StreamingServer(int streamerPort, int chatPort) {
         this.streamerPort = streamerPort;
         this.chatPort = chatPort;
     }
-
+    /**
+     * Constructs a StreamingServer with default ports.
+     * Streamer port: 8080, Chat port: 8082.
+     */
     public StreamingServer() {
         streamerPort = 8080;
         chatPort = 8082;
     }
-
+    /**
+     * Starts the server to listen for streamer and chat client connections.
+     */
     public void startServer() {
         try (ServerSocket serverSocket = new ServerSocket(streamerPort);
              ServerSocket chatSocket = new ServerSocket(chatPort);
@@ -41,7 +73,12 @@ public class StreamingServer {
             System.err.println(e.getMessage());
         }
     }
-
+    /**
+     * Handles the connection to a streamer and relays video data to connected clients.
+     *
+     * @param streamerSocket The socket used by the streamer to send data.
+     * @param udpSocket      The UDP socket used to broadcast data to clients.
+     */
     private void handleStreamer(Socket streamerSocket, DatagramSocket udpSocket) {
         byte[] buffer = new byte[8192]; // larger buffer to read data
         byte[] packetBuffer = new byte[1316]; // fixed size buffer for packets
@@ -69,9 +106,22 @@ public class StreamingServer {
             }
         } catch (IOException e) {
             System.err.println("Streamer disconnected: " + e.getMessage());
+        } finally {
+            notifyUsers();
         }
     }
-
+    /**
+     * Notifies connected chat users that the stream has stopped.
+     */
+    private void notifyUsers() {
+        broadcastChatMessage("Server: The stream has stopped.");
+    }
+    /**
+     * Sends a video packet to all connected clients via UDP.
+     *
+     * @param packet    The packet to send.
+     * @param udpSocket The UDP socket used for sending the packet.
+     */
     private void sendPacket(byte[] packet, DatagramSocket udpSocket) {
         for (InetSocketAddress clientAddress : clients.keySet()) {
             try {
@@ -83,7 +133,11 @@ public class StreamingServer {
             }
         }
     }
-
+    /**
+     * Listens for chat client connections and starts a new thread for each connection.
+     *
+     * @param chatSocket The server socket used for accepting chat connections.
+     */
     private void listenForChatConnections(ServerSocket chatSocket) {
         try {
             System.out.println("Listening for chat clients on port " + chatPort + "...");
@@ -95,7 +149,11 @@ public class StreamingServer {
             System.err.println("Error in chat listener: " + e.getMessage());
         }
     }
-
+    /**
+     * Handles a chat client connection, registering the client and processing chat messages.
+     *
+     * @param clientSocket The socket connected to the chat client.
+     */
     private void handleChatClient(Socket clientSocket) {
         InetSocketAddress clientAddress = null;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -129,7 +187,12 @@ public class StreamingServer {
             }
         }
     }
-
+    /**
+     * Handles chat messages from a client and broadcasts them to all connected clients.
+     *
+     * @param reader       BufferedReader for reading messages from the client.
+     * @param displayName  The display name of the client.
+     */
     private void handleChatMessages(BufferedReader reader, String displayName) {
         try {
             String message;
@@ -142,7 +205,11 @@ public class StreamingServer {
             System.err.println("Chat client disconnected: " + e.getMessage());
         }
     }
-
+    /**
+     * Broadcasts a chat message to all connected chat clients.
+     *
+     * @param message The message to broadcast.
+     */
     private void broadcastChatMessage(String message) {
         for (PrintWriter client : clients.values()) {
             client.println(message);
