@@ -59,8 +59,8 @@ public class StreamingClient {
         JLabel sourceLabel = new JLabel("Video Source:");
         JComboBox<String> sourceCombo = new JComboBox<>();
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            // Code only works on windows and desktop capture atm but there is room to expand the code.
             sourceCombo.addItem("desktop");
-            sourceCombo.addItem("camera");
         } else if (System.getProperty("os.name").toLowerCase().contains("mac")) {
             sourceCombo.addItem("default");
         } else {
