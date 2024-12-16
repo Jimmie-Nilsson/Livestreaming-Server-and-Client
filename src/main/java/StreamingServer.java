@@ -107,14 +107,8 @@ public class StreamingServer {
         } catch (IOException e) {
             System.err.println("Streamer disconnected: " + e.getMessage());
         } finally {
-            notifyUsers();
+            broadcastChatMessage("Server: The stream has stopped.");
         }
-    }
-    /**
-     * Notifies connected chat users that the stream has stopped.
-     */
-    private void notifyUsers() {
-        broadcastChatMessage("Server: The stream has stopped.");
     }
     /**
      * Sends a video packet to all connected clients via UDP.
