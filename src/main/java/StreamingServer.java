@@ -166,17 +166,22 @@ public class StreamingServer {
                 clientAddress = new InetSocketAddress(clientSocket.getInetAddress(), streamPort);
                 clients.put(clientAddress, writer);
 
-                // Acknowledge registration
+                // Let Receiver know its connected
                 writer.println("Registration successful");
 
-                // Transition to chat mode
+
                 handleChatMessages(reader, displayName);
             }
         } catch (IOException e) {
             System.err.println("Error handling chat client: " + e.getMessage());
         } finally {
             if (clientAddress != null) {
-                clients.remove(clientAddress);
+                try {
+                    AutoCloseable closeable = clients.remove(clientAddress);
+                    closeable.close();
+                }catch (Exception e) {
+                    System.err.println("Error closing client writer: " + e.getMessage());
+                }
                 System.out.println("Client removed: " + clientAddress);
             }
         }

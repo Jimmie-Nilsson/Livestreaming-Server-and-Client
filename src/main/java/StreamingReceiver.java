@@ -1,7 +1,3 @@
-import uk.co.caprica.vlcj.media.MediaRef;
-import uk.co.caprica.vlcj.media.TrackType;
-import uk.co.caprica.vlcj.player.base.MediaPlayer;
-import uk.co.caprica.vlcj.player.base.MediaPlayerEventListener;
 import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent;
 
 import javax.swing.*;
@@ -128,58 +124,10 @@ public class StreamingReceiver {
         frame.add(splitPane, BorderLayout.CENTER);
         frame.setVisible(true);
 
-        // Add event listeners for the media player to handle stream interruptions
-        mediaPlayerComponent.mediaPlayer().events().addMediaPlayerEventListener(new MediaPlayerEventListener() {
-            @Override
-            public void stopped(MediaPlayer mediaPlayer) {
-                System.out.println("Stream error detected. Retrying...");
-                restartStream(mediaPlayerComponent);
-            }
-
-            @Override
-            public void finished(MediaPlayer mediaPlayer) {
-                System.out.println("Stream finished. Retrying...");
-                restartStream(mediaPlayerComponent);
-            }
-
-            @Override
-            public void error(MediaPlayer mediaPlayer) {
-                System.out.println("Stream error detected. Retrying...");
-                restartStream(mediaPlayerComponent);
-            }
-
-            // Other unused methods are intentionally left empty
-            @Override public void buffering(MediaPlayer mediaPlayer, float newCache) {}
-            @Override public void playing(MediaPlayer mediaPlayer) {}
-            @Override public void paused(MediaPlayer mediaPlayer) {}
-            @Override public void forward(MediaPlayer mediaPlayer) {}
-            @Override public void backward(MediaPlayer mediaPlayer) {}
-            @Override public void mediaPlayerReady(MediaPlayer mediaPlayer) {}
-            @Override public void mediaChanged(MediaPlayer mediaPlayer, MediaRef media) {}
-            @Override public void opening(MediaPlayer mediaPlayer) {}
-            @Override public void timeChanged(MediaPlayer mediaPlayer, long newTime) {}
-            @Override public void positionChanged(MediaPlayer mediaPlayer, float newPosition) {}
-            @Override public void seekableChanged(MediaPlayer mediaPlayer, int newSeekable) {}
-            @Override public void pausableChanged(MediaPlayer mediaPlayer, int newPausable) {}
-            @Override public void titleChanged(MediaPlayer mediaPlayer, int i) {}
-            @Override public void snapshotTaken(MediaPlayer mediaPlayer, String filename) {}
-            @Override public void lengthChanged(MediaPlayer mediaPlayer, long newLength) {}
-            @Override public void videoOutput(MediaPlayer mediaPlayer, int newCount) {}
-            @Override public void scrambledChanged(MediaPlayer mediaPlayer, int i) {}
-            @Override public void elementaryStreamAdded(MediaPlayer mediaPlayer, TrackType trackType, int i) {}
-            @Override public void elementaryStreamDeleted(MediaPlayer mediaPlayer, TrackType trackType, int i) {}
-            @Override public void elementaryStreamSelected(MediaPlayer mediaPlayer, TrackType trackType, int i) {}
-            @Override public void corked(MediaPlayer mediaPlayer, boolean b) {}
-            @Override public void muted(MediaPlayer mediaPlayer, boolean b) {}
-            @Override public void volumeChanged(MediaPlayer mediaPlayer, float v) {}
-            @Override public void audioDeviceChanged(MediaPlayer mediaPlayer, String s) {}
-            @Override public void chapterChanged(MediaPlayer mediaPlayer, int i) {}
-        });
 
         initializeChatClient();
         mediaPlayerComponent.mediaPlayer().media().play(udpStreamUrl);
     }
-
     /**
      * Appends a new chat message to the chat area.
      *
@@ -189,21 +137,4 @@ public class StreamingReceiver {
         SwingUtilities.invokeLater(() -> chatArea.append(message + "\n"));
     }
 
-    /**
-     * Attempts to restart the video stream in case of interruptions.
-     *
-     * @param mediaPlayerComponent The media player component handling the video stream.
-     */
-    private void restartStream(EmbeddedMediaPlayerComponent mediaPlayerComponent) {
-        SwingUtilities.invokeLater(() -> {
-            // if media player is running stop it.
-            if (mediaPlayerComponent.mediaPlayer().status().isPlaying()) {
-                mediaPlayerComponent.mediaPlayer().controls().stop();
-            }
-
-            // restart stream if possible.
-            System.out.println("Restarting stream...");
-            mediaPlayerComponent.mediaPlayer().media().play(udpStreamUrl);
-        });
-    }
 }

@@ -65,6 +65,7 @@ public class ChatClient {
             }
         } catch (IOException e) {
             System.err.println("Error receiving messages: " + e.getMessage());
+            disconnect();
         }
     }
 
