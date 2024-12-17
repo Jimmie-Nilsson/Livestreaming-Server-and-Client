@@ -99,17 +99,5 @@ public class ChatClient {
             System.err.println("Error closing resources: " + e.getMessage());
         }
     }
-
-    /**
-     * Interface for handling received messages.
-     */
-    public interface MessageListener {
-        /**
-         * Called when a new message is received.
-         *
-         * @param message The received message.
-         */
-        void onMessageReceived(String message);
-    }
 }
 

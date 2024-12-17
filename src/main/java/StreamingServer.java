@@ -205,7 +205,6 @@ public class StreamingServer {
             String message;
             while ((message = reader.readLine()) != null) {
                 String formattedMessage = displayName + ": " + message;
-                System.out.println("Broadcasting chat message: " + formattedMessage);
                 broadcastChatMessage(formattedMessage);
             }
         } catch (IOException e) {
