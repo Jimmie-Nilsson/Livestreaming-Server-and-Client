@@ -16,7 +16,7 @@ public class StreamingServer {
 
     /**
      * Main entry point for the StreamingServer application.
-     *
+     * <p>
      * Initializes the server with the provided streamer and chat ports or uses default ports
      * if no arguments are provided.
      *
@@ -27,12 +27,13 @@ public class StreamingServer {
     public static void main(String[] args) {
         if (args.length == 2) {
             new StreamingServer(Integer.parseInt(args[0]), Integer.parseInt(args[1])).startServer();
-        }else if (args.length == 0){
+        } else if (args.length == 0) {
             new StreamingServer().startServer();
-        }else {
+        } else {
             System.out.println("Usage: java StreamingServer <streamer port> <chat port>");
         }
     }
+
     /**
      * Constructs a StreamingServer with specified ports for streaming and chat connections.
      *
@@ -43,6 +44,7 @@ public class StreamingServer {
         this.streamerPort = streamerPort;
         this.chatPort = chatPort;
     }
+
     /**
      * Constructs a StreamingServer with default ports.
      * Streamer port: 8080, Chat port: 8082.
@@ -51,6 +53,7 @@ public class StreamingServer {
         streamerPort = 8080;
         chatPort = 8082;
     }
+
     /**
      * Starts the server to listen for streamer and chat client connections.
      */
@@ -73,6 +76,7 @@ public class StreamingServer {
             System.err.println(e.getMessage());
         }
     }
+
     /**
      * Handles the connection to a streamer and relays video data to connected clients.
      *
@@ -110,6 +114,7 @@ public class StreamingServer {
             broadcastChatMessage("Server: The stream has stopped.");
         }
     }
+
     /**
      * Sends a video packet to all connected clients via UDP.
      *
@@ -127,6 +132,7 @@ public class StreamingServer {
             }
         }
     }
+
     /**
      * Listens for chat client connections and starts a new thread for each connection.
      *
@@ -143,6 +149,7 @@ public class StreamingServer {
             System.err.println("Error in chat listener: " + e.getMessage());
         }
     }
+
     /**
      * Handles a chat client connection, registering the client and processing chat messages.
      *
@@ -179,18 +186,19 @@ public class StreamingServer {
                 try {
                     AutoCloseable closeable = clients.remove(clientAddress);
                     closeable.close();
-                }catch (Exception e) {
+                } catch (Exception e) {
                     System.err.println("Error closing client writer: " + e.getMessage());
                 }
                 System.out.println("Client removed: " + clientAddress);
             }
         }
     }
+
     /**
      * Handles chat messages from a client and broadcasts them to all connected clients.
      *
-     * @param reader       BufferedReader for reading messages from the client.
-     * @param displayName  The display name of the client.
+     * @param reader      BufferedReader for reading messages from the client.
+     * @param displayName The display name of the client.
      */
     private void handleChatMessages(BufferedReader reader, String displayName) {
         try {
@@ -204,6 +212,7 @@ public class StreamingServer {
             System.err.println("Chat client disconnected: " + e.getMessage());
         }
     }
+
     /**
      * Broadcasts a chat message to all connected chat clients.
      *

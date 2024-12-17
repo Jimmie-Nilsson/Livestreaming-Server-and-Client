@@ -8,6 +8,9 @@ import java.net.Socket;
 
 /**
  * Handles video streaming using FFmpegFrameGrabber and FFmpegFrameRecorder.
+ * This class captures video frames from a specified source and streams them to a server.
+ *
+ * @author Jimmie Nilsson jini6619
  */
 public class VideoStreamer {
     private FFmpegFrameGrabber videoGrabber;
@@ -17,6 +20,13 @@ public class VideoStreamer {
     private final String serverAddress;
     private final int serverPort;
 
+    /**
+     * Constructs a VideoStreamer instance with specified video source and server details.
+     *
+     * @param videoSource   The source of the video (e.g., "desktop" for screen capture or a camera).
+     * @param serverAddress The server address to stream the video.
+     * @param serverPort    The server port to send the video stream.
+     */
     public VideoStreamer(String videoSource, String serverAddress, int serverPort) {
         this.videoSource = videoSource;
         this.serverAddress = serverAddress;
@@ -24,7 +34,10 @@ public class VideoStreamer {
     }
 
     /**
-     * Starts the streaming process.
+     * Starts the video streaming process.
+     * It initializes the video grabber, captures frames, and streams them to the specified server.
+     *
+     * @throws Exception If an error occurs during streaming setup or execution.
      */
     public void startStreaming() throws Exception {
         isStreaming = true;
@@ -61,7 +74,7 @@ public class VideoStreamer {
     }
 
     /**
-     * Stops the streaming process and cleans up resources.
+     * Stops the streaming process and releases the resources for the grabber and recorder.
      */
     public void stopStreaming() {
         isStreaming = false;
@@ -79,12 +92,20 @@ public class VideoStreamer {
         }
     }
 
+    /**
+     * Captures a single frame from the video source.
+     *
+     * @return A Frame object representing the captured frame, or null if the grabber is not initialized.
+     * @throws Exception If an error occurs while grabbing the frame.
+     */
     public Frame grabFrame() throws Exception {
         return videoGrabber != null ? videoGrabber.grab() : null;
     }
 
     /**
-     * @return
+     * Checks whether the streaming process is currently active.
+     *
+     * @return True if streaming is active, false otherwise.
      */
     public boolean isStreaming() {
         return isStreaming;

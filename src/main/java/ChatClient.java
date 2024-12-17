@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+
 /**
  * A client class for handling chat communication with a server.
  * It supports connecting to a server, sending messages, receiving messages,
@@ -17,6 +18,7 @@ public class ChatClient {
     private PrintWriter writer;
     private BufferedReader reader;
     private MessageListener messageListener;
+
     /**
      * Constructs a ChatClient instance.
      *

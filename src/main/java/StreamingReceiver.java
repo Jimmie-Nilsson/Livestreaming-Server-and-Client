@@ -128,6 +128,7 @@ public class StreamingReceiver {
         initializeChatClient();
         mediaPlayerComponent.mediaPlayer().media().play(udpStreamUrl);
     }
+
     /**
      * Appends a new chat message to the chat area.
      *

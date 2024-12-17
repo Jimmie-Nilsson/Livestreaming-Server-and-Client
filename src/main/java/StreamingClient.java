@@ -7,16 +7,31 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 
+/**
+ * StreamingClient is a GUI-based Java application that captures video
+ * from a specified source, streams it to a server, and displays the video
+ * locally in a window.
+ */
 public class StreamingClient {
 
-    private VideoStreamer videoStreamer;
-    private Thread streamingThread;
-    private JLabel videoDisplayLabel;
+    private VideoStreamer videoStreamer; // Handles video streaming
+    private Thread streamingThread; // Thread for streaming process
+    private JLabel videoDisplayLabel; // Displays the video frames locally
 
+    /**
+     * The entry point for the StreamingClient application.
+     *
+     * @param args Command-line arguments (not used).
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new StreamingClient()::createAndShowGUI);
     }
 
+    /**
+     * Creates and displays the graphical user interface for the streaming client.
+     * The interface includes input fields for server address, server port,
+     * and video source selection, along with a button to start or stop streaming.
+     */
     private void createAndShowGUI() {
         JFrame frame = new JFrame("Streaming Client");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -25,16 +40,19 @@ public class StreamingClient {
 
         JPanel inputPanel = new JPanel(new GridLayout(5, 2, 10, 10));
 
+        // Server address input
         JLabel serverLabel = new JLabel("Server Address:");
         JTextField serverField = new JTextField("localhost");
         inputPanel.add(serverLabel);
         inputPanel.add(serverField);
 
+        // Server port input
         JLabel portLabel = new JLabel("Server Port:");
         JTextField portField = new JTextField("8080");
         inputPanel.add(portLabel);
         inputPanel.add(portField);
 
+        // Video source selection currently only works for windows but this makes room for expansion
         JLabel sourceLabel = new JLabel("Video Source:");
         JComboBox<String> sourceCombo = new JComboBox<>();
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -60,6 +78,7 @@ public class StreamingClient {
         frame.add(splitPane, BorderLayout.CENTER);
         frame.add(startStopButton, BorderLayout.SOUTH);
 
+        // Action listener for the start/stop button
         startStopButton.addActionListener(e -> {
             if (streamingThread == null || !streamingThread.isAlive()) {
                 // Start streaming
@@ -74,6 +93,7 @@ public class StreamingClient {
                 String videoSource = (String) sourceCombo.getSelectedItem();
                 videoStreamer = new VideoStreamer(videoSource, serverAddress, serverPort);
 
+                // Start the streaming thread
                 streamingThread = new Thread(() -> {
                     try {
                         videoStreamer.startStreaming();
@@ -96,6 +116,7 @@ public class StreamingClient {
             }
         });
 
+        // Window closing to stop resources properly
         frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -114,15 +135,19 @@ public class StreamingClient {
         frame.setVisible(true);
     }
 
+    /**
+     * Updates the video display by retrieving video frames from the VideoStreamer
+     * and displaying them in a scaled format on the JLabel.
+     */
     private void updateVideoDisplay() {
         Java2DFrameConverter converter = new Java2DFrameConverter();
         long lastUpdateTime = 0;
         while (videoStreamer.isStreaming()) {
             long currentTime = System.currentTimeMillis();
-            if (currentTime - lastUpdateTime > 33) { // 1000 ms / 30 FPS = ~33 ms
+            if (currentTime - lastUpdateTime > 33) { // Update approximately every 33 ms (30 FPS)
+                // this is to make sure the process doesn't use too many resources
                 lastUpdateTime = currentTime;
 
-                // Convert the frame to a BufferedImage
                 try {
                     Frame videoFrame = videoStreamer.grabFrame();
                     if (videoFrame != null) {
@@ -138,7 +163,9 @@ public class StreamingClient {
                             g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                             g2d.drawImage(image, 0, 0, labelWidth, labelHeight, null);
                             g2d.dispose();
-                            // Update JLabel on the UI thread
+
+
+                            // Update JLabel with the new image on the Swing thread
                             SwingUtilities.invokeLater(() -> videoDisplayLabel.setIcon(new ImageIcon(scaledImage)));
                         }
                     }
