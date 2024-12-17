@@ -30,7 +30,7 @@ public class StreamingServer {
         } else if (args.length == 0) {
             new StreamingServer().startServer();
         } else {
-            System.out.println("Usage: java StreamingServer <streamer port> <chat port>");
+            System.out.println("Usage: java StreamingServer <streamer port> <chat port> OR java StreamingServer");
         }
     }
 
@@ -62,7 +62,7 @@ public class StreamingServer {
              ServerSocket chatSocket = new ServerSocket(chatPort);
              DatagramSocket udpSocket = new DatagramSocket()) {
 
-            new Thread(() -> listenForChatConnections(chatSocket)).start();
+            new Thread(() -> listenForConnections(chatSocket)).start();
 
             System.out.println("Server started. Waiting for connections...");
             while (true) {
@@ -126,24 +126,23 @@ public class StreamingServer {
             try {
                 DatagramPacket datagramPacket = new DatagramPacket(packet, packet.length, clientAddress.getAddress(), clientAddress.getPort());
                 udpSocket.send(datagramPacket);
-                System.out.println("Sending packet to " + clientAddress); // debug message
             } catch (IOException e) {
-                System.err.println("Error sending packet: " + e.getMessage()); // debug message
+                System.err.println("Error sending packet: " + e.getMessage());
             }
         }
     }
 
     /**
-     * Listens for chat client connections and starts a new thread for each connection.
+     * Listens for client connections and starts a new thread for each connection.
      *
      * @param chatSocket The server socket used for accepting chat connections.
      */
-    private void listenForChatConnections(ServerSocket chatSocket) {
+    private void listenForConnections(ServerSocket chatSocket) {
         try {
             System.out.println("Listening for chat clients on port " + chatPort + "...");
             while (true) {
-                Socket chatClientSocket = chatSocket.accept();
-                new Thread(() -> handleChatClient(chatClientSocket)).start();
+                Socket clientSocket = chatSocket.accept();
+                new Thread(() -> handleClient(clientSocket)).start();
             }
         } catch (IOException e) {
             System.err.println("Error in chat listener: " + e.getMessage());
@@ -151,11 +150,11 @@ public class StreamingServer {
     }
 
     /**
-     * Handles a chat client connection, registering the client and processing chat messages.
+     * Handles a client connection, registering the client and processing chat messages.
      *
      * @param clientSocket The socket connected to the chat client.
      */
-    private void handleChatClient(Socket clientSocket) {
+    private void handleClient(Socket clientSocket) {
         InetSocketAddress clientAddress = null;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)) {
@@ -170,6 +169,7 @@ public class StreamingServer {
                 String displayName = parts[1];
                 int streamPort = Integer.parseInt(parts[2]);
                 System.out.println("Registered client: " + displayName);
+                // Here a new Address is made with the port specified by the Receiver which will then be used to send data too.
                 clientAddress = new InetSocketAddress(clientSocket.getInetAddress(), streamPort);
                 clients.put(clientAddress, writer);
 
