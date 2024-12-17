@@ -85,7 +85,7 @@ public class StreamingServer {
      */
     private void handleStreamer(Socket streamerSocket, DatagramSocket udpSocket) {
         byte[] buffer = new byte[8192]; // larger buffer to read data
-        byte[] packetBuffer = new byte[1316]; // fixed size buffer for packets
+        byte[] packetBuffer = new byte[1316]; // fixed size buffer for packets to make sure they can be decoded properly
 
         try (InputStream inputStream = streamerSocket.getInputStream()) {
             int bytesRead, offset = 0;
