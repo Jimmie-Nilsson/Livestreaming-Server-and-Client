@@ -98,7 +98,6 @@ public class StreamingClient {
                     try {
                         videoStreamer.startStreaming();
                     } catch (Exception ex) {
-                        ex.printStackTrace();
                         JOptionPane.showMessageDialog(frame, "Error: " + ex.getMessage(), "Streaming Error", JOptionPane.ERROR_MESSAGE);
                     }
                 });

@@ -88,7 +88,7 @@ public class VideoStreamer {
                 recorder.release();
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            System.err.println("Error closing resources: " + ex.getMessage());
         }
     }
 
