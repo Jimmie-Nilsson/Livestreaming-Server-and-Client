@@ -39,21 +39,51 @@ public class StreamingReceiver {
     /**
      * Main entry point for the StreamingReceiver application.
      *
-     * @param args Command-line arguments:
-     *             - serverAddress: Server address.
-     *             - streamPort: Port for video stream.
-     *             - chatPort: Port for chat.
-     *             - displayName: User's display name.
+     * @param args Command-line arguments (not used).
      */
     public static void main(String[] args) {
-        if (args.length != 4) {
-            System.err.println("Error usage: java StreamingReceiver <serverAddress> <streamPort> <chatPort> <displayName>");
-            System.exit(1);
-        }
-        new StreamingReceiver(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]), args[3]).startClient();
-
+        SwingUtilities.invokeLater(StreamingReceiver::showInputDialog);
     }
 
+    /**
+     * Displays the input dialog for server parameters.
+     */
+    private static void showInputDialog() {
+        JTextField serverAddressField = new JTextField();
+        JTextField streamPortField = new JTextField();
+        JTextField chatPortField = new JTextField();
+        JTextField displayNameField = new JTextField();
+
+        JPanel panel = new JPanel(new GridLayout(5, 2));
+        panel.add(new JLabel("Server Address:"));
+        panel.add(serverAddressField);
+        panel.add(new JLabel("Stream Port:"));
+        panel.add(streamPortField);
+        panel.add(new JLabel("Chat Port:"));
+        panel.add(chatPortField);
+        panel.add(new JLabel("Display Name:"));
+        panel.add(displayNameField);
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Enter Connection Details", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String serverAddress = serverAddressField.getText();
+                int streamPort = Integer.parseInt(streamPortField.getText());
+                int chatPort = Integer.parseInt(chatPortField.getText());
+                String displayName = displayNameField.getText();
+
+                if (serverAddress.isEmpty() || displayName.isEmpty()) {
+                    JOptionPane.showMessageDialog(null,"Server address and display name cannot be empty.", "Invalid input", JOptionPane.ERROR_MESSAGE);
+                }
+
+                new StreamingReceiver(serverAddress, streamPort, chatPort, displayName).startClient();
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Stream Port and Chat Port must be valid integers.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+            } catch (IllegalArgumentException e) {
+                JOptionPane.showMessageDialog(null, e.getMessage(), "Invalid Input", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
     /**
      * Starts the client application by initializing the GUI.
      */

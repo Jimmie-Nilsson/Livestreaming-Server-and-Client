@@ -11,6 +11,8 @@ import java.awt.image.BufferedImage;
  * StreamingClient is a GUI-based Java application that captures video
  * from a specified source, streams it to a server, and displays the video
  * locally in a window.
+ *
+ * @author Jimmie Nilsson jini6619
  */
 public class StreamingClient {
 
@@ -140,37 +142,31 @@ public class StreamingClient {
      */
     private void updateVideoDisplay() {
         Java2DFrameConverter converter = new Java2DFrameConverter();
-        long lastUpdateTime = 0;
         while (videoStreamer.isStreaming()) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastUpdateTime > 33) { // Update approximately every 33 ms (30 FPS)
-                // this is to make sure the process doesn't use too many resources
-                lastUpdateTime = currentTime;
-
-                try {
-                    Frame videoFrame = videoStreamer.grabFrame();
-                    if (videoFrame != null) {
-                        BufferedImage image = converter.convert(videoFrame);
+            try {
+                Thread.sleep(33);
+                Frame videoFrame = videoStreamer.grabFrame();
+                if (videoFrame != null && videoFrame.image != null) {
+                    BufferedImage image = converter.convert(videoFrame);
 
 
-                        // Scale image to fit JLabel dimensions
-                        int labelWidth = videoDisplayLabel.getWidth();
-                        int labelHeight = videoDisplayLabel.getHeight();
-                        if (labelWidth > 0 && labelHeight > 0) { // Ensure label is visible
-                            BufferedImage scaledImage = new BufferedImage(labelWidth, labelHeight, image.getType());
-                            Graphics2D g2d = scaledImage.createGraphics();
-                            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                            g2d.drawImage(image, 0, 0, labelWidth, labelHeight, null);
-                            g2d.dispose();
+                    // Scale image to fit JLabel dimensions
+                    int labelWidth = videoDisplayLabel.getWidth();
+                    int labelHeight = videoDisplayLabel.getHeight();
+                    if (labelWidth > 0 && labelHeight > 0) { // Ensure label is visible
+                        BufferedImage scaledImage = new BufferedImage(labelWidth, labelHeight, image.getType());
+                        Graphics2D g2d = scaledImage.createGraphics();
+                        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                        g2d.drawImage(image, 0, 0, labelWidth, labelHeight, null);
+                        g2d.dispose();
 
 
-                            // Update JLabel with the new image on the Swing thread
-                            SwingUtilities.invokeLater(() -> videoDisplayLabel.setIcon(new ImageIcon(scaledImage)));
-                        }
+                        // Update JLabel with the new image on the Swing thread
+                        SwingUtilities.invokeLater(() -> videoDisplayLabel.setIcon(new ImageIcon(scaledImage)));
                     }
-                } catch (Exception ex) {
-                    System.err.println("Error grabbing frame:" + ex.getMessage());
                 }
+            } catch (Exception ex) {
+                System.err.println("Error grabbing frame:" + ex.getMessage());
             }
         }
     }

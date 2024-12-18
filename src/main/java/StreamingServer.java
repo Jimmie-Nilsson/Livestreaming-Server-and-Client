@@ -64,7 +64,7 @@ public class StreamingServer {
 
             new Thread(() -> listenForConnections(chatSocket)).start();
 
-            System.out.println("Server started. Waiting for connections...");
+            System.out.println("Server started. Waiting for connections on port : " + streamerPort);
             while (true) {
                 Socket streamerSocket = serverSocket.accept();
                 System.out.println("Streamer connected: " + streamerSocket.getInetAddress());
@@ -139,13 +139,13 @@ public class StreamingServer {
      */
     private void listenForConnections(ServerSocket chatSocket) {
         try {
-            System.out.println("Listening for chat clients on port " + chatPort + "...");
+            System.out.println("Listening for clients on port " + chatPort + "...");
             while (true) {
                 Socket clientSocket = chatSocket.accept();
                 new Thread(() -> handleClient(clientSocket)).start();
             }
         } catch (IOException e) {
-            System.err.println("Error in chat listener: " + e.getMessage());
+            System.err.println("Error in listener: " + e.getMessage());
         }
     }
 

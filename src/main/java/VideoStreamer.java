@@ -19,6 +19,7 @@ public class VideoStreamer {
     private final String videoSource;
     private final String serverAddress;
     private final int serverPort;
+    private Frame videoFrame;
 
     /**
      * Constructs a VideoStreamer instance with specified video source and server details.
@@ -58,18 +59,23 @@ public class VideoStreamer {
             recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
             recorder.setFrameRate(30);
             recorder.setVideoBitrate(2000000);
-            recorder.setOption("preset", "ultrafast");
+            recorder.setOption("movflags", "faststart");
+            recorder.setVideoOption("preset", "ultrafast");
+            recorder.setOption("mpegts_flags", "resend_headers");
             recorder.setOption("pkt_size", "1316"); // Set packet size
             recorder.start();
 
             while (isStreaming) {
                 Frame videoFrame = videoGrabber.grab();
                 if (videoFrame != null) {
+                    this.videoFrame = videoFrame;
                     recorder.record(videoFrame);
                 }
             }
-        } finally {
-            stopStreaming();
+        }catch (Exception e){
+            System.err.println(e.getMessage());
+        } {
+           // stopStreaming();
         }
     }
 
@@ -99,7 +105,7 @@ public class VideoStreamer {
      * @throws Exception If an error occurs while grabbing the frame.
      */
     public Frame grabFrame() throws Exception {
-        return videoGrabber != null ? videoGrabber.grab() : null;
+        return videoFrame != null ? videoFrame : null;
     }
 
     /**
