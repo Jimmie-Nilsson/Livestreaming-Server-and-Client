@@ -40,7 +40,7 @@ public class ChatClient {
         writer = new PrintWriter(socket.getOutputStream(), true);
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-        // Start a thread to listen for incoming messages
+
         new Thread(this::listenForMessages).start();
     }
 
