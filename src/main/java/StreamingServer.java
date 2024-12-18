@@ -50,8 +50,7 @@ public class StreamingServer {
      * Streamer port: 8080, Chat port: 8082.
      */
     public StreamingServer() {
-        streamerPort = 8080;
-        chatPort = 8082;
+        this(8080, 8082);
     }
 
     /**

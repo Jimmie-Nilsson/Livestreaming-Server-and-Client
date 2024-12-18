@@ -75,9 +75,7 @@ public class VideoStreamer {
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
-        {
-            // stopStreaming();
-        }
+       stopStreaming();
     }
 
     /**
