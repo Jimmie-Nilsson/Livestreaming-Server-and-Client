@@ -72,10 +72,11 @@ public class VideoStreamer {
                     recorder.record(videoFrame);
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             System.err.println(e.getMessage());
-        } {
-           // stopStreaming();
+        }
+        {
+            // stopStreaming();
         }
     }
 

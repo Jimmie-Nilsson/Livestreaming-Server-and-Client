@@ -73,7 +73,7 @@ public class StreamingReceiver {
                 String displayName = displayNameField.getText();
 
                 if (serverAddress.isEmpty() || displayName.isEmpty()) {
-                    JOptionPane.showMessageDialog(null,"Server address and display name cannot be empty.", "Invalid input", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Server address and display name cannot be empty.", "Invalid input", JOptionPane.ERROR_MESSAGE);
                 }
 
                 new StreamingReceiver(serverAddress, streamPort, chatPort, displayName).startClient();
@@ -84,6 +84,7 @@ public class StreamingReceiver {
             }
         }
     }
+
     /**
      * Starts the client application by initializing the GUI.
      */
@@ -167,5 +168,4 @@ public class StreamingReceiver {
     private void appendChatMessage(String message) {
         SwingUtilities.invokeLater(() -> chatArea.append(message + "\n"));
     }
-
 }
