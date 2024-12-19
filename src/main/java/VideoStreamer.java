@@ -46,14 +46,14 @@ public class VideoStreamer {
         try (Socket socket = new Socket(serverAddress, serverPort);
              OutputStream socketStream = socket.getOutputStream()) {
 
-            // Set up the video grabber
+            // Video grabber
             videoGrabber = new FFmpegFrameGrabber(videoSource);
             videoGrabber.setFormat("gdigrab"); // Screen capture format (Windows-specific)
             videoGrabber.setImageHeight(1080);
             videoGrabber.setImageWidth(1920);
             videoGrabber.start();
 
-            // Set up the recorder
+            // Recorder
             recorder = new FFmpegFrameRecorder(socketStream, videoGrabber.getImageWidth(), videoGrabber.getImageHeight());
             recorder.setFormat("mpegts");
             recorder.setVideoCodec(avcodec.AV_CODEC_ID_H264);
@@ -62,7 +62,7 @@ public class VideoStreamer {
             recorder.setOption("movflags", "faststart");
             recorder.setVideoOption("preset", "ultrafast");
             recorder.setOption("mpegts_flags", "resend_headers");
-            recorder.setOption("pkt_size", "1316"); // Set packet size
+            recorder.setOption("pkt_size", "1316");
             recorder.start();
 
             while (isStreaming) {
